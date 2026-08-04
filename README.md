@@ -1,4 +1,4 @@
-# NUBD Exchange - Mobile Application
+# E-Commerce - Mobile Application
 
 **Student Name:** Joseph Brian Natividad  
 **Course Code:** INF231  
