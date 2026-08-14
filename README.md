@@ -1,88 +1,199 @@
-# E-Commerce - Mobile Application
+## Laboratory Activity 3:
 
-**Student Name:** Joseph Brian Natividad  
-**Course Code:** INF231  
-**Course Name:** CTAMOBL - Advanced Mobile Programming  
+## 📑 Table of Contents
 
----
-
-## 📱 Project Overview
-
-**NUBD Exchange** is a modern Flutter mobile application designed for product discovery, marketplace exchange, and seamless user interaction. Built with **Material 3**, **Provider** for state management, and **Flutter ScreenUtil** for responsive layouts, the app delivers a fluid, premium user experience in both Light and Dark themes.
+1. [Interaction Architecture: Cart Model, Services & Cart Screen](#1-interaction-architecture-cart-model-services--cart-screen)
+2. [Updated Design Patterns in this Activity](#2-updated-design-patterns-in-this-activity)
+3. [DummyJSON Carts API: `getById` & `getByUserId` Integration](#3-dummyjson-carts-api-getbyid--getbyuserid-integration)
+4. [Project Overview & Setup Guide](#4-project-overview--setup-guide)
 
 ---
 
-## 🚀 Lab Activity 2 Features (`lab-act2` Branch)
+## 1. Interaction Architecture: Cart Model, Services & Cart Screen
 
-### 1. 🛍️ Modern 2-Column Product Grid & Cards (`ProductScreen`)
-* **Responsive Grid Layout**: Transformed flat list views into an engaging 2-column grid (`GridView.builder`).
-* **Visual Card Design**: Cards feature rounded corners (`16.r`), subtle drop shadows, and brand category tags.
-* **Rating & Discount Badges**:
-  * **★ Rating Badge**: Translucent dark overlay with gold star indicator.
-  * **Discount Tag (`-10%`)**: Red badge highlighting promotional discounts.
+This activity implements a decoupled architecture connecting data models, API repository services, and UI screens in Flutter.
 
-### 2. 🔍 Real-Time Search Bar & Category Filter Chips
-* **Integrated Sticky Search Bar**: Live debounced search by product title, brand, or description with a clear (`X`) button.
-* **Dynamic Category Chips**: Horizontally scrollable `ChoiceChip` bar allowing one-tap category filtering (*All*, *Beauty*, *Fragrances*, *Furniture*, etc.).
-* **Empty Search Feedback**: Designed clean fallback states when queries return zero matches.
+### Component Roles & Communication Flow
 
-### 3. ✨ Interactive Product Detail View (`DetailScreen`)
-* **Hero Motion Animations**: Fluid image expansion transitions when navigating from product cards to detail view (`Hero` widget).
-* **Collapsible Floating Header**: Featuring semi-transparent back button and interactive **Wishlist Heart Toggle (`❤️ Saved to Wishlist!`)**.
-* **Stock & Price Highlights**: Highlights stock status (`In Stock` / `Out of Stock`), original price strikethrough, and net savings.
-* **Selling Feature Tiles**: Visual icons for 🚚 Shipping, 🛡️ Warranty, and 🔄 Return Policies.
-* **Encouraging Bottom Action Bar**: Interactive quantity selector (`- 1 +`) and primary **"Add to Cart"** button with feedback toasts.
-* **Theme-Adaptive Contrast**: Fully optimized Like & Share buttons visible across both Light and Dark mode.
+1. **Data Models (`lib/models/cart.dart`)**:
+   - `Cart`: Holds cart metadata (`id`, `userId`, `total`, `discountedTotal`, `totalProducts`, `totalQuantity`) and a list of `CartProduct` items.
+   - `CartProduct`: Deserializes individual cart items from JSON via `CartProduct.fromJson()`, supporting both `discountedPercentage` and `discountPercentage` API keys.
+   - **Model Adapter (`toProduct()`)**: Transforms a `CartProduct` into a `Product` model instance. This allows `DetailScreen` to reuse its layout, hero animations, and stock/warranty widgets without modifying its constructor interface.
 
-### 4. ⚙️ Streamlined Settings Screen (`SettingsScreen`)
-* **Horizontal Theme Toggle**: Clean `SwitchListTile` card in the screen body with Sun/Moon icons for seamless theme switching between Light and Dark mode.
+2. **API Service Layer (`lib/services/cart_service.dart`)**:
+   - `CartService` serves as the centralized HTTP networking gateway.
+   - `getCartByUserId(int userId)` executes `http.get` to `$host/carts/user/$userId`, validates HTTP 200 responses, and extracts the first cart object (`data['carts'][0]`).
+   - `addToCart({required int userId, required int productId, required int quantity})` issues a `POST` request to `$host/carts/add` sending `{"userId": userId, "products": [{"id": productId, "quantity": quantity}]}`.
+
+3. **User Interface (`lib/screens/cart_screen.dart`)**:
+   - Asynchronously loads cart data using `FutureBuilder<Cart>`.
+   - Utilizes system `ThemeProvider` tokens (`theme.colorScheme.primary`, `theme.cardTheme.color`, `theme.scaffoldBackgroundColor`) to render item tiles, steppers (`+` / `-`), and order checkout summaries.
+   - **Clickable Item Navigation**: Each item tile wraps in an `InkWell`. When clicked, it converts `cartProduct.toProduct()` and invokes `Navigator.push(...)` to navigate directly to `DetailScreen`.
 
 ---
 
-## 🛠️ Tech Stack & Packages
+## 2. Updated Design Patterns in this Activity
 
-* **Framework:** Flutter (Dart SDK ^3.12)
-* **State Management:** `provider` (^6.1.5) for `ThemeProvider`
-* **Screen Responsiveness:** `flutter_screenutil` (^5.9.3)
-* **Environment Config:** `flutter_dotenv` (^6.0.1)
-* **API Integration:** RESTful product fetching via `http` (^1.6.0)
+### A. Model Adapter / DTO Mapping Pattern
 
----
+- **Problem**: `CartScreen` operates on `CartProduct` items from `/carts`, while `DetailScreen` expects a `Product` model from `/products`.
+- **Solution**: Implemented `toProduct()` inside `CartProduct`. This acts as an **Adapter Pattern**, converting `CartProduct` attributes (`id`, `title`, `price`, `thumbnail`, `discountedPercentage`, `quantity`) into a compatible `Product` DTO for `DetailScreen`.
 
-## 📁 Directory Structure
+### B. Repository / Service Separation Pattern
 
-```text
-natividad_mobile/
-├── assets/
-│   ├── fonts/           # Custom Poppins Typography
-│   └── images/          # NUBD Exchange Branding Assets
-├── lib/
-│   ├── models/          # Product, Dimensions, Review & Meta Data Models
-│   ├── provider/        # ThemeProvider (Light & Dark Hex Palettes)
-│   ├── screens/         # HomeScreen, ProductScreen, DetailScreen, SettingsScreen
-│   ├── services/        # ProductService API Fetching
-│   ├── widgets/         # CustomText Typography Components
-│   ├── constant.dart    # Theme Constants
-│   └── main.dart        # Main Application Entry Point
-└── pubspec.yaml         # Dependencies & Asset Registrations
-```
+- **Problem**: Inlining `http` networking logic directly inside Flutter widgets causes code duplication, tight coupling, and difficult testing.
+- **Solution**: Encapsulated network requests into `CartService`. Widgets only request futures (e.g. `CartService().getCartByUserId(1)`), maintaining clean separation of concerns.
+
+### C. Dynamic Navigation & Conditional FloatingActionButton Pattern
+
+- **Problem**: Moving `Chat` from the `BottomNavigationBar` into a `FloatingActionButton` required hiding the FAB specifically when viewing `CartScreen`.
+- **Solution**: In `HomeScreen`, updated bottom tabs to `[Shop, Cart, Profile]`. Controlled FAB rendering dynamically using state condition `floatingActionButton: _selectedIndex == 1 ? null : FloatingActionButton(...)`.
+
+### D. Theme Tokenization Pattern
+
+- **Problem**: Hardcoding static color hexes breaks theme responsiveness when switching between Light Mode and Dark Mode.
+- **Solution**: Replaced hardcoded values in `CartScreen` with dynamic tokens from `Theme.of(context)` (`primary`, `cardColor`, `scaffoldBackgroundColor`, `surface`), ensuring instant compatibility with `ThemeProvider`.
 
 ---
 
-## 🏃 Getting Started
+## 3. DummyJSON Carts API: `getById` & `getByUserId` Integration
 
-1. **Clone the repository:**
-   ```bash
-   git clone https://github.com/njeybe/natividad-advmobprogAY2627.git
-   cd natividad-advmobprogAY2627/natividad_mobile
-   ```
+According to the official [DummyJSON Carts Documentation](https://dummyjson.com/docs/carts), cart retrieval can be performed by **User ID** or by **Cart ID**:
 
-2. **Install dependencies:**
-   ```bash
-   flutter pub get
-   ```
+### 1. Fetching Cart by User ID (`GET /carts/user/{userId}`)
 
-3. **Run the application:**
-   ```bash
-   flutter run
-   ```
+To render only one specific user's cart (e.g. User ID `1`):
+
+- **Endpoint**: `GET https://dummyjson.com/carts/user/1`
+- **Response Structure**:
+
+  ```json
+  {
+    "carts": [
+      {
+        "id": 1,
+        "products": [
+          {
+            "id": 162,
+            "title": "Blue Frock",
+            "price": 29.99,
+            "quantity": 4,
+            "total": 119.96,
+            "discountPercentage": 12.13,
+            "discountedTotal": 105.41,
+            "thumbnail": "https://cdn.dummyjson.com/product-images/tops/blue-frock/thumbnail.webp"
+          }
+        ],
+        "total": 13037.88,
+        "discountedTotal": 11510.81,
+        "userId": 1,
+        "totalProducts": 4,
+        "totalQuantity": 12
+      }
+    ],
+    "total": 1,
+    "skip": 0,
+    "limit": 1
+  }
+  ```
+
+- **Dart Implementation in `CartService`**:
+
+  ```dart
+  // ENHANCEMENT 3: Render single user cart by user ID (GET /carts/user/{userId})
+  Future<Cart> getCartByUserId(int userId) async {
+    final response = await http.get(Uri.parse('$host/carts/user/$userId'));
+
+    if (response.statusCode == 200) {
+      final Map<String, dynamic> data = jsonDecode(response.body);
+      final List cartsList = data['carts'] ?? [];
+      if (cartsList.isNotEmpty) {
+        return Cart.fromJson(cartsList.first as Map<String, dynamic>);
+      }
+      throw Exception('No cart found for user $userId');
+    } else {
+      throw Exception('Failed to load cart for user $userId');
+    }
+  }
+  ```
+
+---
+
+### 2. Fetching Single Cart by Cart ID (`GET /carts/{cartId}`)
+
+To query a single cart directly by its Cart ID (e.g., Cart ID `1`):
+
+- **Endpoint**: `GET https://dummyjson.com/carts/1`
+- **Response Structure**:
+
+  ```json
+  {
+    "id": 1,
+    "products": [ ... ],
+    "total": 13037.88,
+    "discountedTotal": 11510.81,
+    "userId": 1,
+    "totalProducts": 4,
+    "totalQuantity": 12
+  }
+  ```
+
+- **Dart Implementation**:
+  ```dart
+  Future<Cart> getCartById(int cartId) async {
+    final response = await http.get(Uri.parse('$host/carts/$cartId'));
+    if (response.statusCode == 200) {
+      final Map<String, dynamic> data = jsonDecode(response.body);
+      return Cart.fromJson(data);
+    } else {
+      throw Exception('Failed to load cart #$cartId');
+    }
+  }
+  ```
+
+---
+
+### 3. Adding Products to Cart (`POST /carts/add`)
+
+To push new product entries to a cart:
+
+- **Endpoint**: `POST https://dummyjson.com/carts/add`
+- **Request Headers**: `Content-Type: application/json`
+- **Request Body**:
+  ```json
+  {
+    "userId": 1,
+    "products": [
+      {
+        "id": 1,
+        "quantity": 1
+      }
+    ]
+  }
+  ```
+- **Dart Implementation**:
+  ```dart
+  // ENHANCEMENT 3: Add to cart by passing product values to POST /carts/add
+  Future<Cart> addToCart({
+    required int userId,
+    required int productId,
+    required int quantity,
+  }) async {
+    final response = await http.post(
+      Uri.parse('$host/carts/add'),
+      headers: {'Content-Type': 'application/json'},
+      body: jsonEncode({
+        'userId': userId,
+        'products': [
+          {'id': productId, 'quantity': quantity}
+        ],
+      }),
+    );
+    if (response.statusCode == 200 || response.statusCode == 201) {
+      final Map<String, dynamic> data = jsonDecode(response.body);
+      return Cart.fromJson(data);
+    } else {
+      throw Exception('Failed to add product to cart');
+    }
+  }
+  ```
