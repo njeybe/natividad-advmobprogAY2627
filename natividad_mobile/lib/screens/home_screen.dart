@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'product_screen.dart';
+import 'cart_screen.dart';
+import 'settings_screen.dart';
 import '../widgets/custom_text.dart';
 
 class HomeScreen extends StatefulWidget {
@@ -14,6 +16,12 @@ class HomeScreen extends StatefulWidget {
 class _HomeScreenState extends State<HomeScreen> {
   int _selectedIndex = 0;
   final PageController _pageController = PageController();
+
+  @override
+  void dispose() {
+    _pageController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -35,7 +43,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 )
               : CustomText(
                   text: (_selectedIndex == 1)
-                      ? 'Chat'
+                      ? 'Cart'
                       : (_selectedIndex == 2)
                           ? 'Profile'
                           : 'Home',
@@ -49,27 +57,50 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
           ],
         ),
+        // ENHANCEMENT 1 & 3: Included CartScreen as tab 1 rendering the single user cart
         body: PageView(
           physics: const NeverScrollableScrollPhysics(),
           controller: _pageController,
-          children: const <Widget>[ProductScreen()],
+          children: const <Widget>[
+            ProductScreen(),
+            CartScreen(userId: 1), // ENHANCEMENT 1 & 3: Render single user cart (User ID = 1)
+            SettingsScreen(),
+          ],
           onPageChanged: (page) {
             setState(() {
               _selectedIndex = page;
             });
           },
         ),
+        // ENHANCEMENT 2: Converted Chat bottom navigation item into FloatingActionButton and replaced with Cart
         bottomNavigationBar: BottomNavigationBar(
           showSelectedLabels: false,
           showUnselectedLabels: false,
           onTap: _onTappedBar,
           items: const [
-            BottomNavigationBarItem(icon: Icon(Icons.shop_2), label: 'Shop'),
-            BottomNavigationBarItem(icon: Icon(Icons.chat), label: 'Chat'),
-            BottomNavigationBarItem(icon: Icon(Icons.person), label: 'Profile'),
+            BottomNavigationBarItem(icon: Icon(Icons.shopping_bag_outlined), label: 'Shop'),
+            BottomNavigationBarItem(icon: Icon(Icons.shopping_cart), label: 'Cart'), // ENHANCEMENT 1
+            BottomNavigationBarItem(icon: Icon(Icons.person_outline), label: 'Profile'),
           ],
           currentIndex: _selectedIndex,
         ),
+
+        // ENHANCEMENT 2: Chat navigation as FloatingActionButton. Hidden when on cart_screen (_selectedIndex == 1)
+        floatingActionButton: _selectedIndex == 1
+            ? null
+            : FloatingActionButton.extended(
+                onPressed: () {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text('💬 Opening Customer Support Chat...'),
+                      behavior: SnackBarBehavior.floating,
+                      duration: Duration(seconds: 2),
+                    ),
+                  );
+                },
+                icon: const Icon(Icons.chat),
+                label: const Text('Chat'),
+              ),
       ),
     );
   }

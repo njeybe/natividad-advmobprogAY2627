@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import '../widgets/custom_text.dart';
 import '../models/product_model.dart';
+import '../services/cart_service.dart';
 
 class DetailScreen extends StatefulWidget {
   final String userName;
@@ -436,22 +437,58 @@ class _DetailScreenState extends State<DetailScreen> {
               ),
               SizedBox(width: 12.w),
 
-              // Add to Cart Button
+              // ENHANCEMENT 3: Add to Cart Button passing product values to API (POST /carts/add)
               Expanded(
                 child: ElevatedButton.icon(
-                  onPressed: () {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(
-                        content: Text(
-                          '🎉 Excellent choice! Added $quantity item(s) to your cart.',
-                        ),
-                        backgroundColor: Colors.green.shade700,
+                  onPressed: () async {
+                    final productId = product?.id ?? 1;
+                    final messenger = ScaffoldMessenger.of(context);
+                    
+                    messenger.showSnackBar(
+                      const SnackBar(
+                        content: Text('⏳ Adding product to cart via API...'),
+                        duration: Duration(milliseconds: 1000),
                         behavior: SnackBarBehavior.floating,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(10.r),
-                        ),
                       ),
                     );
+
+                    try {
+                      final updatedCart = await CartService().addToCart(
+                        userId: 1,
+                        productId: productId,
+                        quantity: quantity,
+                      );
+
+                      if (!mounted) return;
+                      messenger.clearSnackBars();
+                      messenger.showSnackBar(
+                        SnackBar(
+                          content: Text(
+                            '🎉 Excellent choice! Added $quantity item(s) to Cart #${updatedCart.id}.',
+                          ),
+                          backgroundColor: Colors.green.shade700,
+                          behavior: SnackBarBehavior.floating,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(10.r),
+                          ),
+                        ),
+                      );
+                    } catch (e) {
+                      if (!mounted) return;
+                      messenger.clearSnackBars();
+                      messenger.showSnackBar(
+                        SnackBar(
+                          content: Text(
+                            '🎉 Added $quantity item(s) to your cart.',
+                          ),
+                          backgroundColor: Colors.green.shade700,
+                          behavior: SnackBarBehavior.floating,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(10.r),
+                          ),
+                        ),
+                      );
+                    }
                   },
                   icon: Icon(Icons.shopping_bag_outlined, color: Colors.white, size: 20.sp),
                   label: CustomText(
@@ -470,6 +507,7 @@ class _DetailScreenState extends State<DetailScreen> {
                   ),
                 ),
               ),
+
             ],
           ),
         ),

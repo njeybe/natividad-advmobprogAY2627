@@ -8,6 +8,7 @@ import 'package:provider/provider.dart';
 // screens
 import 'screens/home_screen.dart';
 import 'screens/settings_screen.dart';
+import 'screens/cart_screen.dart';
 
 // providers
 import 'provider/theme_provider.dart';
@@ -46,6 +47,7 @@ class NatividadAdvMobProg extends StatelessWidget {
             routes: {
               '/home': (context) => const HomeScreen(),
               '/settings': (context) => const SettingsScreen(),
+              '/cart': (context) => const CartScreen(userId: 1),
             },
           );
         },
@@ -53,3 +55,4 @@ class NatividadAdvMobProg extends StatelessWidget {
     );
   }
 }
+
