@@ -1,199 +1,96 @@
-## Laboratory Activity 3:
+# Lab Activity 4: Discussion & Implementation Guide
 
 ## 📑 Table of Contents
-
-1. [Interaction Architecture: Cart Model, Services & Cart Screen](#1-interaction-architecture-cart-model-services--cart-screen)
-2. [Updated Design Patterns in this Activity](#2-updated-design-patterns-in-this-activity)
-3. [DummyJSON Carts API: `getById` & `getByUserId` Integration](#3-dummyjson-carts-api-getbyid--getbyuserid-integration)
-4. [Project Overview & Setup Guide](#4-project-overview--setup-guide)
-
----
-
-## 1. Interaction Architecture: Cart Model, Services & Cart Screen
-
-This activity implements a decoupled architecture connecting data models, API repository services, and UI screens in Flutter.
-
-### Component Roles & Communication Flow
-
-1. **Data Models (`lib/models/cart.dart`)**:
-   - `Cart`: Holds cart metadata (`id`, `userId`, `total`, `discountedTotal`, `totalProducts`, `totalQuantity`) and a list of `CartProduct` items.
-   - `CartProduct`: Deserializes individual cart items from JSON via `CartProduct.fromJson()`, supporting both `discountedPercentage` and `discountPercentage` API keys.
-   - **Model Adapter (`toProduct()`)**: Transforms a `CartProduct` into a `Product` model instance. This allows `DetailScreen` to reuse its layout, hero animations, and stock/warranty widgets without modifying its constructor interface.
-
-2. **API Service Layer (`lib/services/cart_service.dart`)**:
-   - `CartService` serves as the centralized HTTP networking gateway.
-   - `getCartByUserId(int userId)` executes `http.get` to `$host/carts/user/$userId`, validates HTTP 200 responses, and extracts the first cart object (`data['carts'][0]`).
-   - `addToCart({required int userId, required int productId, required int quantity})` issues a `POST` request to `$host/carts/add` sending `{"userId": userId, "products": [{"id": productId, "quantity": quantity}]}`.
-
-3. **User Interface (`lib/screens/cart_screen.dart`)**:
-   - Asynchronously loads cart data using `FutureBuilder<Cart>`.
-   - Utilizes system `ThemeProvider` tokens (`theme.colorScheme.primary`, `theme.cardTheme.color`, `theme.scaffoldBackgroundColor`) to render item tiles, steppers (`+` / `-`), and order checkout summaries.
-   - **Clickable Item Navigation**: Each item tile wraps in an `InkWell`. When clicked, it converts `cartProduct.toProduct()` and invokes `Navigator.push(...)` to navigate directly to `DetailScreen`.
+1. [Overview](#1-overview)
+2. [How User Model, Services, and Screens Interact](#2-how-user-model-services-and-screens-interact)
+3. [Updated Design Patterns in this Activity](#3-updated-design-patterns-in-this-activity)
+4. [Using Saved User Data to Render Cart by User ID](#4-using-saved-user-data-to-render-cart-by-user-id)
+5. [Summary of Implemented Enhancements](#5-summary-of-implemented-enhancements)
 
 ---
 
-## 2. Updated Design Patterns in this Activity
+## 1. Overview
 
-### A. Model Adapter / DTO Mapping Pattern
+In **Lab Activity 4 (API Part III)**, we expanded the mobile e-commerce application by adding user authentication, session persistence using `SharedPreferences`, a dedicated user profile screen, and dynamic cart loading tailored to the logged-in user.
 
-- **Problem**: `CartScreen` operates on `CartProduct` items from `/carts`, while `DetailScreen` expects a `Product` model from `/products`.
-- **Solution**: Implemented `toProduct()` inside `CartProduct`. This acts as an **Adapter Pattern**, converting `CartProduct` attributes (`id`, `title`, `price`, `thumbnail`, `discountedPercentage`, `quantity`) into a compatible `Product` DTO for `DetailScreen`.
-
-### B. Repository / Service Separation Pattern
-
-- **Problem**: Inlining `http` networking logic directly inside Flutter widgets causes code duplication, tight coupling, and difficult testing.
-- **Solution**: Encapsulated network requests into `CartService`. Widgets only request futures (e.g. `CartService().getCartByUserId(1)`), maintaining clean separation of concerns.
-
-### C. Dynamic Navigation & Conditional FloatingActionButton Pattern
-
-- **Problem**: Moving `Chat` from the `BottomNavigationBar` into a `FloatingActionButton` required hiding the FAB specifically when viewing `CartScreen`.
-- **Solution**: In `HomeScreen`, updated bottom tabs to `[Shop, Cart, Profile]`. Controlled FAB rendering dynamically using state condition `floatingActionButton: _selectedIndex == 1 ? null : FloatingActionButton(...)`.
-
-### D. Theme Tokenization Pattern
-
-- **Problem**: Hardcoding static color hexes breaks theme responsiveness when switching between Light Mode and Dark Mode.
-- **Solution**: Replaced hardcoded values in `CartScreen` with dynamic tokens from `Theme.of(context)` (`primary`, `cardColor`, `scaffoldBackgroundColor`, `surface`), ensuring instant compatibility with `ThemeProvider`.
+The design follows a **Modern Minimalist Mobile UI** with full **ThemeProvider** light/dark theme integration and icon-based components (without emojis).
 
 ---
 
-## 3. DummyJSON Carts API: `getById` & `getByUserId` Integration
+## 2. How User Model, Services, and Screens Interact
 
-According to the official [DummyJSON Carts Documentation](https://dummyjson.com/docs/carts), cart retrieval can be performed by **User ID** or by **Cart ID**:
+The app uses a three-tier architecture that separates **Data Representation (Model)**, **Business Logic & Networking (Service)**, and **User Interface (Screen)**:
 
-### 1. Fetching Cart by User ID (`GET /carts/user/{userId}`)
+```
+[ User Input (Sign-in) ]
+         │
+         ▼
+[ UserService.loginUser() ] ──► [ POST /auth/login (DummyJSON API) ]
+         │
+         ▼
+[ SharedPreferences Storage ] (Stores id, name, token, email, etc.)
+         │
+         ├──────────────────────────────┬──────────────────────────────┐
+         ▼                              ▼                              ▼
+  [ SplashScreen ]               [ ProfileScreen ]              [ HomeScreen / Cart ]
+Checks if token exists;        Converts stored data into      Reads user.id and renders
+redirects to Home or Sign-in.  User model & displays info.    personalized cart items.
+```
 
-To render only one specific user's cart (e.g. User ID `1`):
+### 1. The User Model (`lib/models/user.dart`)
+* Defines a clear blueprint for user data with fields like `id`, `username`, `email`, `firstName`, `lastName`, `gender`, `image`, `accessToken`, and `refreshToken`.
+* `User.fromJson()` takes raw dictionary/JSON data and converts it into a safe, strongly-typed Dart object.
+* `toJson()` allows converting the user object back into a map when needed.
 
-- **Endpoint**: `GET https://dummyjson.com/carts/user/1`
-- **Response Structure**:
+### 2. The User Service Layer (`lib/services/user_service.dart`)
+* Acts as the bridge between the remote API, local disk storage (`SharedPreferences`), and the UI.
+* **`loginUser(username, password)`**: Sends a POST request to `https://dummyjson.com/auth/login`. When successful, it automatically calls `saveUserData()` to cache credentials and profile data.
+* **`saveUserData(userData)`**: Stores each user attribute (`id`, `username`, `email`, `firstName`, `lastName`, `gender`, `image`, tokens) into local `SharedPreferences`.
+* **`getUserData()` & `getUser()`**: Reads the cached data from storage and reconstructs the `User` model for UI consumption.
+* **`isLoggedIn()`**: Checks if a valid auth token is saved locally to maintain persistent login sessions.
+* **`logout()`**: Clears stored preferences so the user can safely sign out.
 
-  ```json
-  {
-    "carts": [
-      {
-        "id": 1,
-        "products": [
-          {
-            "id": 162,
-            "title": "Blue Frock",
-            "price": 29.99,
-            "quantity": 4,
-            "total": 119.96,
-            "discountPercentage": 12.13,
-            "discountedTotal": 105.41,
-            "thumbnail": "https://cdn.dummyjson.com/product-images/tops/blue-frock/thumbnail.webp"
-          }
-        ],
-        "total": 13037.88,
-        "discountedTotal": 11510.81,
-        "userId": 1,
-        "totalProducts": 4,
-        "totalQuantity": 12
-      }
-    ],
-    "total": 1,
-    "skip": 0,
-    "limit": 1
-  }
-  ```
-
-- **Dart Implementation in `CartService`**:
-
-  ```dart
-  // ENHANCEMENT 3: Render single user cart by user ID (GET /carts/user/{userId})
-  Future<Cart> getCartByUserId(int userId) async {
-    final response = await http.get(Uri.parse('$host/carts/user/$userId'));
-
-    if (response.statusCode == 200) {
-      final Map<String, dynamic> data = jsonDecode(response.body);
-      final List cartsList = data['carts'] ?? [];
-      if (cartsList.isNotEmpty) {
-        return Cart.fromJson(cartsList.first as Map<String, dynamic>);
-      }
-      throw Exception('No cart found for user $userId');
-    } else {
-      throw Exception('Failed to load cart for user $userId');
-    }
-  }
-  ```
+### 3. Screen Interaction
+* **`SplashScreen`**: When the app starts, it asks `UserService.isLoggedIn()`. If logged in, it automatically navigates to `/home`; otherwise, it redirects to `/signin`.
+* **`SigninScreen`**: Collects the username and password, validates user input, calls `UserService.loginUser()`, and upon success navigates to `/home`.
+* **`ProfileScreen`**: Fetches the user profile using `UserService.getUser()` and displays the avatar, full name, username badge, and detailed information cards (Email, Gender, User ID) along with a working Log Out button.
 
 ---
 
-### 2. Fetching Single Cart by Cart ID (`GET /carts/{cartId}`)
+## 3. Updated Design Patterns in this Activity
 
-To query a single cart directly by its Cart ID (e.g., Cart ID `1`):
+### A. Repository & Service Gateway Pattern
+* **What it does**: Instead of putting HTTP requests and `SharedPreferences` operations directly inside widget files, all authentication and session logic is organized inside `UserService`.
+* **Benefit**: The UI code stays clean and focused purely on layout, while data management remains reusable and easy to maintain.
 
-- **Endpoint**: `GET https://dummyjson.com/carts/1`
-- **Response Structure**:
+### B. Persistent Authentication / Session State Pattern
+* **What it does**: By storing user tokens and attributes in `SharedPreferences`, the app remembers the user's login state even if the app is closed or restarted.
+* **Benefit**: Users don't need to sign in every time they open the application, providing a seamless user experience.
 
-  ```json
-  {
-    "id": 1,
-    "products": [ ... ],
-    "total": 13037.88,
-    "discountedTotal": 11510.81,
-    "userId": 1,
-    "totalProducts": 4,
-    "totalQuantity": 12
-  }
-  ```
+### C. Theme Tokenization Pattern (`ThemeProvider`)
+* **What it does**: All screens (`SplashScreen`, `SigninScreen`, `ProfileScreen`, `CartScreen`, `HomeScreen`) read colors directly from `Theme.of(context)` and `ThemeProvider`.
+* **Benefit**: Toggling between Light Mode and Dark Mode instantly updates the entire UI cleanly without any hardcoded color glitches.
 
-- **Dart Implementation**:
-  ```dart
-  Future<Cart> getCartById(int cartId) async {
-    final response = await http.get(Uri.parse('$host/carts/$cartId'));
-    if (response.statusCode == 200) {
-      final Map<String, dynamic> data = jsonDecode(response.body);
-      return Cart.fromJson(data);
-    } else {
-      throw Exception('Failed to load cart #$cartId');
-    }
-  }
-  ```
+### D. Model Adapter / DTO Pattern
+* **What it does**: The `User` model translates raw map keys from the DummyJSON authentication endpoint into typed properties.
+* **Benefit**: Prevents runtime null pointer errors and makes autocomplete and data manipulation safe across all screens.
 
 ---
 
-### 3. Adding Products to Cart (`POST /carts/add`)
+## 4. Using Saved User Data to Render Cart by User ID
 
-To push new product entries to a cart:
+In previous activities, the cart was hardcoded to a static ID. In this activity, the cart dynamically matches the authenticated user:
 
-- **Endpoint**: `POST https://dummyjson.com/carts/add`
-- **Request Headers**: `Content-Type: application/json`
-- **Request Body**:
-  ```json
-  {
-    "userId": 1,
-    "products": [
-      {
-        "id": 1,
-        "quantity": 1
-      }
-    ]
-  }
-  ```
-- **Dart Implementation**:
-  ```dart
-  // ENHANCEMENT 3: Add to cart by passing product values to POST /carts/add
-  Future<Cart> addToCart({
-    required int userId,
-    required int productId,
-    required int quantity,
-  }) async {
-    final response = await http.post(
-      Uri.parse('$host/carts/add'),
-      headers: {'Content-Type': 'application/json'},
-      body: jsonEncode({
-        'userId': userId,
-        'products': [
-          {'id': productId, 'quantity': quantity}
-        ],
-      }),
-    );
-    if (response.statusCode == 200 || response.statusCode == 201) {
-      final Map<String, dynamic> data = jsonDecode(response.body);
-      return Cart.fromJson(data);
-    } else {
-      throw Exception('Failed to add product to cart');
-    }
-  }
-  ```
+1. **User Signs In**: When a user logs in (for example, `emilys`), DummyJSON returns their unique `id` (e.g., `id: 1`).
+2. **Local Storage**: `UserService.saveUserData()` saves this `id` into `SharedPreferences`.
+3. **HomeScreen Session Load**: When `HomeScreen` opens, it reads the saved user profile (`_userService.getUser()`) and retrieves the user's `id`.
+4. **Dynamic Cart Binding**: `HomeScreen` passes the active user ID directly into `CartScreen(userId: _currentUser?.id ?? 1)`.
+5. **API Retrieval**: `CartScreen` calls `CartService.getCartByUserId(userId)`, querying `GET https://dummyjson.com/carts/user/{userId}` to fetch and render only that user's specific cart items, prices, quantities, and totals.
+
+---
+
+## 5. Summary of Implemented Enhancements
+
+* **Enhancement 1 (Splash Screen)**: Designed a Modern Minimalist E-Commerce splash screen with smooth micro-animations (`AnimationController`), branding logo, feature chips, and persistent auth check.
+* **Enhancement 2 (Sign-in Screen)**: Created a clean sign-in screen matching the `ThemeProvider` palette, utilizing vector icons (no emojis), form validation, and `UserService` authentication.
+* **Enhancement 3 (Profile Screen & User Cart)**: Created `User` model and `ProfileScreen` with user details cards and logout functionality; dynamically rendered `CartScreen` based on the saved user's ID.
