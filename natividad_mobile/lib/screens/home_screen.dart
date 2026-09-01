@@ -85,7 +85,7 @@ class _HomeScreenState extends State<HomeScreen> {
           currentIndex: _selectedIndex,
         ),
 
-        // ENHANCEMENT 2: Chat navigation as FloatingActionButton. Hidden when on cart_screen (_selectedIndex == 1)
+        // ENHANCEMENT 2: Make the chat bottom navigation as FloatingActionButton. When in the cart_screen the FloatingActionButton must be hidden.
         floatingActionButton: _selectedIndex == 1
             ? null
             : FloatingActionButton.extended(

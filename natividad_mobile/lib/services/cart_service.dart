@@ -3,7 +3,7 @@ import 'package:http/http.dart' as http;
 import '../constant.dart';
 import '../models/cart.dart';
 
-// ENHANCEMENT 3: CartService managing user cart API operations from https://dummyjson.com/docs/carts
+// ENHANCEMENT 3: Read the Cart documentation https://dummyjson.com/docs/carts and check how to integrate cart by user id. To render only one user cart. Also try to use add to cart by passing the values of the product => cart https://dummyjson.com/carts/add
 class CartService {
   /// ENHANCEMENT 3: Render only one user cart by user ID endpoint GET /carts/user/{userId}
   Future<Cart> getCartByUserId(int userId) async {

@@ -5,8 +5,8 @@ import '../services/cart_service.dart';
 import '../widgets/custom_text.dart';
 import 'detail_screen.dart';
 
-// ENHANCEMENT 1: Created CartScreen to render cart API data with clickable items navigating to DetailScreen
-// ENHANCEMENT 3: Integrated user-specific cart fetching (GET /carts/user/{userId}) to render a single user cart
+/// ENHANCEMENT 1: Make a cart_screen in order to render the new API endpoint. The items on the cart_screen must be clickable going to the detail_screen for the utilization of the screen widget.
+/// ENHANCEMENT 3: Read the Cart documentation https://dummyjson.com/docs/carts and check how to integrate cart by user id. To render only one user cart.
 class CartScreen extends StatefulWidget {
   final int userId;
 
