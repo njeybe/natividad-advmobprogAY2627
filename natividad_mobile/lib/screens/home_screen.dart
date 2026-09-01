@@ -92,7 +92,7 @@ class _HomeScreenState extends State<HomeScreen> {
           ],
         ),
 
-        // ENHANCEMENT 3: Dynamic binding of CartScreen by User ID & ProfileScreen tab
+        // ENHANCEMENT 3: Based on the saved user data render the cart by userId
         body: PageView(
           physics: const NeverScrollableScrollPhysics(),
           controller: _pageController,

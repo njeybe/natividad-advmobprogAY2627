@@ -3,9 +3,7 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import '../services/user_service.dart';
 import '../widgets/custom_text.dart';
 
-/// ENHANCEMENT 1: Modern Minimalist E-Commerce Splash Screen
-/// Features smooth micro-animations, theme-aware styling, e-commerce branding,
-/// and persistent authentication checking.
+/// ENHANCEMENT 1: Make your own UI for the splash_screen implementing the persistent authentication.
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
 

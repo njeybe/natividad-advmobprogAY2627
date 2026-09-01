@@ -3,9 +3,7 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import '../services/user_service.dart';
 import '../widgets/custom_text.dart';
 
-/// ENHANCEMENT 2: Modern Minimalist Sign-in Screen
-/// Implements user_service authentication, form validation, theme-aware styling,
-/// and icon-based e-commerce layout without emojis.
+/// ENHANCEMENT 2: Make your own UI for the sign_screen implementing the user_service and the authentication logic above.
 class SigninScreen extends StatefulWidget {
   const SigninScreen({super.key});
 

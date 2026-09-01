@@ -1,3 +1,4 @@
+// ENHANCEMENT 3: Using the user_service create your own user.dart (model) implementing it on this project
 class User {
   final int id;
   final String username;

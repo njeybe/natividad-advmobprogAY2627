@@ -4,9 +4,7 @@ import '../models/user.dart';
 import '../services/user_service.dart';
 import '../widgets/custom_text.dart';
 
-/// ENHANCEMENT 3: Profile Screen rendering User model data from SharedPreferences/API
-/// Features full profile information cards, avatar rendering, theme integration,
-/// and secure logout functionality.
+/// ENHANCEMENT 3: Using the user_service create your own user.dart (model) implementing it on this project and rendering the data on the profile_screen creating UI on it. Based on the saved user data render the cart by userId
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
 
