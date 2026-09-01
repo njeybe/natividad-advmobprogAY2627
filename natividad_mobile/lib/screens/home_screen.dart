@@ -132,7 +132,7 @@ class _HomeScreenState extends State<HomeScreen> {
           currentIndex: _selectedIndex,
         ),
 
-        // Chat FloatingActionButton: Visible on Shop and Profile tabs, hidden on Cart tab
+        // ENHANCEMENT 2: Make the chat bottom navigation as FloatingActionButton. When in the cart_screen the FloatingActionButton must be hidden.
         floatingActionButton: _selectedIndex == 1
             ? null
             : FloatingActionButton.extended(
