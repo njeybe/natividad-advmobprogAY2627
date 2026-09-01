@@ -74,7 +74,7 @@ class _ProductScreenState extends State<ProductScreen> {
 
         return Column(
           children: [
-            // Modern Search Bar
+            // ENHANCEMENT 2: Real-Time Search Bar
             Padding(
               padding: EdgeInsets.fromLTRB(16.w, 12.h, 16.w, 8.h),
               child: Container(
@@ -128,7 +128,7 @@ class _ProductScreenState extends State<ProductScreen> {
               ),
             ),
 
-            // Horizontal Category Filter Chips
+            // ENHANCEMENT 2: Horizontal Category Filter Chips
             if (categories.length > 1)
               SizedBox(
                 height: 40.h,
@@ -174,7 +174,7 @@ class _ProductScreenState extends State<ProductScreen> {
 
             SizedBox(height: 8.h),
 
-            // Grid of Products or Empty Search State
+            // ENHANCEMENT 1: 2-Column Product Grid or Empty Search State
             Expanded(
               child: filteredProducts.isEmpty
                   ? Center(
@@ -255,7 +255,7 @@ class _ProductScreenState extends State<ProductScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Image with Rating & Discount Badges
+            // ENHANCEMENT 1: Product Image with Rating & Discount Badges
             Expanded(
               child: Stack(
                 children: [

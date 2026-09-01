@@ -27,6 +27,7 @@ class SettingsScreen extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            // ENHANCEMENT 4: Theme Toggle Switch (Light / Dark Mode)
             Container(
               decoration: BoxDecoration(
                 color: theme.cardColor,
