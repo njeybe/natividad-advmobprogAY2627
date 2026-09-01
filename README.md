@@ -11,7 +11,7 @@
 ### 🎯 Goal
 Understand the core differences between local (ephemeral) UI state and global (application-wide) state management in Flutter.
 
-### ✨ Key Highlights
-* **Interactive Counter Screen:** Demonstrates local state (`setState`) to manage temporary, screen-level count interactions.
-* **Global Theme Switching:** Utilizes app-wide state management (`Provider`) to seamlessly toggle between Light and Dark themes across all screens.
-* **Multi-Screen Flow:** Implements smooth screen transitions connecting the counter interface to the theme settings page.
+### ✨ Key Highlights & Implementation
+* **Ephemeral State Management:** Implemented an interactive counter page utilizing `setState` to manage local, widget-level state.
+* **Application-Wide State Management:** Built a theme toggle page using `Provider` and `ChangeNotifier` to control global Light and Dark mode.
+* **Multi-Screen Navigation:** Seamless transition connecting the counter view to the theme settings page.
