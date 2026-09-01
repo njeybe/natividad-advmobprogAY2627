@@ -3,6 +3,7 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import '../widgets/custom_text.dart';
 import '../models/product_model.dart';
 
+/// ENHANCEMENT 2: Add details page when clicked the card
 class DetailScreen extends StatefulWidget {
   final String userName;
   final String postContent;
@@ -61,7 +62,7 @@ class _DetailScreenState extends State<DetailScreen> {
     return Scaffold(
       body: CustomScrollView(
         slivers: [
-          // ENHANCEMENT 3: Collapsible Floating Hero Image Header & Wishlist Toggle
+          // ENHANCEMENT 2: Collapsible Floating Hero Image Header & Wishlist Toggle
           SliverAppBar(
             expandedHeight: 300.h,
             pinned: true,
@@ -76,7 +77,7 @@ class _DetailScreenState extends State<DetailScreen> {
               ),
             ),
             actions: [
-              // ENHANCEMENT 3: Interactive Wishlist Heart Toggle
+              // Interactive Wishlist Heart Toggle
               Padding(
                 padding: EdgeInsets.all(8.r),
                 child: CircleAvatar(
@@ -112,7 +113,7 @@ class _DetailScreenState extends State<DetailScreen> {
                 fit: StackFit.expand,
                 children: [
                   if (finalPostImage.isNotEmpty)
-                    // ENHANCEMENT 3: Hero Image Transition
+                    // Hero Image Transition
                     Hero(
                       tag: product != null
                           ? 'product_image_${product.id}'
@@ -152,7 +153,7 @@ class _DetailScreenState extends State<DetailScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // ENHANCEMENT 3: Category & Stock Status Row
+                  // Category & Stock Status Row
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [

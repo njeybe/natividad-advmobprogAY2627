@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import '../provider/theme_provider.dart';
 import '../widgets/custom_text.dart';
 
+/// ENHANCEMENT 3: Add settings page to move the dark/light mode switch
 class SettingsScreen extends StatelessWidget {
   const SettingsScreen({super.key});
 
@@ -27,7 +28,7 @@ class SettingsScreen extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // ENHANCEMENT 4: Theme Toggle Switch (Light / Dark Mode)
+            // ENHANCEMENT 3: Add settings page to move the dark/light mode switch
             Container(
               decoration: BoxDecoration(
                 color: theme.cardColor,

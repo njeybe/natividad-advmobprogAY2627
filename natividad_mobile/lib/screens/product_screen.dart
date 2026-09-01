@@ -74,7 +74,7 @@ class _ProductScreenState extends State<ProductScreen> {
 
         return Column(
           children: [
-            // ENHANCEMENT 2: Real-Time Search Bar
+            // ENHANCEMENT 1: Add search bar above the article list
             Padding(
               padding: EdgeInsets.fromLTRB(16.w, 12.h, 16.w, 8.h),
               child: Container(
@@ -128,7 +128,7 @@ class _ProductScreenState extends State<ProductScreen> {
               ),
             ),
 
-            // ENHANCEMENT 2: Horizontal Category Filter Chips
+            // Horizontal Category Filter Chips
             if (categories.length > 1)
               SizedBox(
                 height: 40.h,
@@ -174,7 +174,7 @@ class _ProductScreenState extends State<ProductScreen> {
 
             SizedBox(height: 8.h),
 
-            // ENHANCEMENT 1: 2-Column Product Grid or Empty Search State
+            // 2-Column Product Grid or Empty Search State
             Expanded(
               child: filteredProducts.isEmpty
                   ? Center(
@@ -225,6 +225,7 @@ class _ProductScreenState extends State<ProductScreen> {
     ThemeData theme,
   ) {
     return GestureDetector(
+      // ENHANCEMENT 2: Add details page when clicked the card
       onTap: () {
         Navigator.push(
           context,
@@ -255,7 +256,7 @@ class _ProductScreenState extends State<ProductScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // ENHANCEMENT 1: Product Image with Rating & Discount Badges
+            // Product Image with Rating & Discount Badges
             Expanded(
               child: Stack(
                 children: [
