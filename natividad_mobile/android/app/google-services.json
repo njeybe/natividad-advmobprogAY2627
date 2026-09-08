@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "730778635582",
+    "project_id": "advmobprog-firebase-2cba3",
+    "storage_bucket": "advmobprog-firebase-2cba3.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:730778635582:android:b94ea1edbe7aae7daf306f",
+        "android_client_info": {
+          "package_name": "com.example.natividad_mobile"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCOIr-cdLJ8EaG-rJomI3QhLpmnvkbsoBw"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
