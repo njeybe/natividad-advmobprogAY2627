@@ -10,6 +10,7 @@ import 'firebase_options.dart';
 // screens
 import 'screens/splash_screen.dart';
 import 'screens/signin_screen.dart';
+import 'screens/signup_screen.dart';
 import 'screens/home_screen.dart';
 import 'screens/profile_screen.dart';
 import 'screens/settings_screen.dart';
@@ -55,6 +56,7 @@ class NatividadAdvMobProg extends StatelessWidget {
             routes: {
               '/splash': (context) => const SplashScreen(),
               '/signin': (context) => const SigninScreen(),
+              '/signup': (context) => const SignupScreen(),
               '/home': (context) => const HomeScreen(),
               '/profile': (context) => const ProfileScreen(),
               '/settings': (context) => const SettingsScreen(),
@@ -66,4 +68,3 @@ class NatividadAdvMobProg extends StatelessWidget {
     );
   }
 }
-

@@ -75,7 +75,9 @@ class _HomeScreenState extends State<HomeScreen> {
                       : (_selectedIndex == 2)
                           ? (_currentUser != null && _currentUser!.firstName.isNotEmpty
                               ? _currentUser!.firstName
-                              : 'Profile')
+                              : (_currentUser != null && _currentUser!.username.isNotEmpty
+                                  ? _currentUser!.username
+                                  : 'Profile'))
                           : 'Home',
                   fontSize: 20.sp,
                   fontWeight: FontWeight.w600,

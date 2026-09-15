@@ -51,3 +51,43 @@ Implement user authentication and session persistence to provide a secure, perso
 * **Enhancement 1 (Animated Splash Screen):** Created a custom splash screen UI (`SplashScreen`) with smooth micro-animations and persistent authentication checking.
 * **Enhancement 2 (Sign-in Screen):** Built a custom sign-in screen UI (`SigninScreen`) integrating form validation, `UserService`, and secure API authentication.
 * **Enhancement 3 (User Model, Profile Screen & User Cart):** Created the `User` model (`user.dart`) and profile screen UI (`ProfileScreen`) to display user information and manage log out, while dynamically rendering the shopping cart based on the saved `userId`.
+
+---
+
+## 🔥 Laboratory Activity 5: Firebase Authentication & Enhancements
+
+### 🎯 Goal
+Integrate Firebase Authentication (`firebase_core` and `firebase_auth`) into the Flutter application, implement comprehensive account creation, session management, credential updating, and contrast mock REST authentication (DummyJSON) with a production-grade cloud identity provider.
+
+### ✨ Key Enhancements
+* **Enhancement 1 (UserService Functions & Unified Session Management):**
+  Implemented complete core authentication methods in `UserService` (`signIn`, `createAccount`, `signOut`, `updateUsername`, `deleteAccount`, `resetPasswordFromCurrentPassword`). Enhanced session handling so that logging out properly clears `SharedPreferences` tokens/session data and invokes Firebase `signOut()`, reliably redirecting the user to `/signin`.
+* **Enhancement 2 (DummyJSON vs Firebase Auth & Signup Screen UI):**
+  Built a new user interface for `SignupScreen` (`signup_screen.dart`) requiring first name (`fName`), last name (`lName`), age (`age`), contact number (`contactNo`), username (`username`), email address (`emailAddress`), and password with validation. Upgraded `SigninScreen` (`signin_screen.dart`) with dual-provider support allowing users to sign in using either Firebase Auth (email & password) or DummyJSON (username & password), complete with a direct route to `SignupScreen`.
+* **Enhancement 3 (Dynamic Profile Screen by LoginType & Settings Logout):**
+  Refactored `ProfileScreen` (`profile_screen.dart`) to retrieve user data via `UserService().getUserData()` and conditionally render details depending on the `LoginType` (displaying Firebase authentication badges, UID, and profile fields for Firebase users vs. mock user details for DummyJSON). Added full user management capabilities on the profile screen (update username, change password, and delete account). Added a dedicated **Log Out** action in `SettingsScreen` (`settings_screen.dart`) to clear session credentials and redirect back to login.
+
+---
+
+### 💬 Laboratory Discussion
+
+#### 1. Workflow for DummyJSON and Firebase Implementation (from SignIn to SignUp)
+* **Sign-Up Workflow:**
+  * **DummyJSON:** DummyJSON is a static mock REST API that simulates e-commerce endpoints. While an add user endpoint exists (`POST https://dummyjson.com/users/add`), it merely returns the submitted payload with a simulated `id` without persisting the new user in a true database. Consequently, subsequent login attempts with newly "registered" credentials fail on the server.
+  * **Firebase Auth:** In contrast, Firebase Authentication communicates directly with Google Identity Infrastructure. When a user submits the registration form on `SignupScreen`, `UserService.createAccount` calls `FirebaseAuth.createUserWithEmailAndPassword(email, password)`. Firebase verifies email uniqueness, enforces password security requirements, creates a persistent cloud record, and returns a valid `UserCredential` with a distinct UID and authentication token. The application then immediately updates the user's `displayName` and persists any supplementary profile metadata (`fName`, `lName`, `age`, `contactNo`) into local storage.
+* **Sign-In Workflow:**
+  * **DummyJSON:** `UserService.loginUser` performs an HTTP POST request to `https://dummyjson.com/auth/login` with `username` and `password`. If valid, the mock server returns a JSON response containing an `accessToken` (JWT), `refreshToken`, and static user attributes. The app saves these tokens to `SharedPreferences` to simulate a persistent session. Token expiration or revocation requires manual handling.
+  * **Firebase Auth:** `UserService.signIn` invokes `FirebaseAuth.signInWithEmailAndPassword(email, password)`. The Firebase SDK cryptographically validates credentials against the Firebase Auth server, manages secure token caching, and initiates automatic JWT refresh cycles in the background. The app listens to real-time session changes through the `authStateChanges` stream, providing immediate reactivity across all UI components.
+
+#### 2. Main Idea for the `UserService` Implementation
+The main idea behind `UserService` is to implement the **Service / Repository Pattern** as a centralized architectural abstraction layer between the UI presentation tier and the underlying authentication mechanisms.
+* **Provider Abstraction & Loose Coupling:** UI widgets (such as `SigninScreen`, `SignupScreen`, `ProfileScreen`, and `SettingsScreen`) do not need to know the low-level transport mechanisms—whether an endpoint is an HTTP REST call using `package:http` or a cloud SDK method using `package:firebase_auth`.
+* **Unified Session & State Management:** `UserService` standardizes session persistence across both authentication strategies using `SharedPreferences` and tracks the active `LoginType` (`firebase` vs `dummyjson`).
+* **Encapsulated Business Logic:** Operations such as re-authentication credentials (`EmailAuthProvider.credential`), password updates, display name modification, and clean teardown on `logout()` are encapsulated within single, reusable, testable asynchronous methods.
+
+#### 3. Benefits of the Firebase Implementation on the Current Laboratory (Flutter Application)
+1. **Real Cloud Persistence & Multi-Device Sync:** Unlike mock REST servers, Firebase Auth stores actual accounts in the cloud. A registered user can log in from any emulator or physical device.
+2. **Industry-Standard Security:** Password hashing (using `scrypt`), rate limiting, credential verification, and brute-force protection are managed by Google Cloud infrastructure rather than custom, error-prone backend code.
+3. **Automatic Token Refresh & Lifecycle Management:** The Firebase SDK handles token lifetimes, transparent token refreshes, and security rule tokens without requiring complex HTTP client interceptors.
+4. **Reactive Authentication State:** The `authStateChanges` stream allows the Flutter app to listen reactively to login, logout, and token revocation events, providing immediate UI state updates without polling.
+5. **Rich Account Management Ecosystem:** Firebase delivers out-of-the-box support for password updates, secure re-authentication, account deletion, password reset emails, and future extensibility (e.g., Google Sign-In, multi-factor authentication, and Cloud Firestore user collections).

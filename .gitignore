@@ -45,5 +45,11 @@ app.*.map.json
 /android/app/release
 
 natividad_mobile/build/
-
+# --- Secrets & local credentials (never commit) ---
 *.env
+**/android/app/google-services.json
+**/ios/Runner/GoogleService-Info.plist
+**/macos/Runner/GoogleService-Info.plist
+**/android/key.properties
+*.jks
+*.keystore
