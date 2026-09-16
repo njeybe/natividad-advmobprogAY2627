@@ -26,10 +26,8 @@ class _SigninScreenState extends State<SigninScreen> {
   // Controllers for Firebase
   final TextEditingController _emailController = TextEditingController();
 
-  // Shared password controller
-  final TextEditingController _passwordController = TextEditingController(
-    text: 'emilyspass',
-  );
+  // Shared password controller (empty for Firebase; auto-fills on DummyJSON)
+  final TextEditingController _passwordController = TextEditingController();
 
   bool _isLoading = false;
   bool _obscurePassword = true;
@@ -245,6 +243,9 @@ class _SigninScreenState extends State<SigninScreen> {
                             onTap: () {
                               setState(() {
                                 _selectedAuthMethod = 0;
+                                if (_passwordController.text == 'emilyspass') {
+                                  _passwordController.clear();
+                                }
                               });
                             },
                             child: Container(
@@ -284,6 +285,12 @@ class _SigninScreenState extends State<SigninScreen> {
                             onTap: () {
                               setState(() {
                                 _selectedAuthMethod = 1;
+                                if (_usernameController.text.isEmpty) {
+                                  _usernameController.text = 'emilys';
+                                }
+                                if (_passwordController.text.isEmpty) {
+                                  _passwordController.text = 'emilyspass';
+                                }
                               });
                             },
                             child: Container(

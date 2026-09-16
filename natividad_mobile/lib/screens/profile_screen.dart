@@ -29,64 +29,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
     });
   }
 
-  // Handle logout with confirmation
-  Future<void> _handleLogout() async {
-    final bool? confirm = await showDialog<bool>(
-      context: context,
-      builder: (context) {
-        final theme = Theme.of(context);
-        return AlertDialog(
-          backgroundColor: theme.scaffoldBackgroundColor,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16.r)),
-          title: CustomText(
-            text: 'Log Out',
-            fontSize: 16.sp,
-            fontWeight: FontWeight.bold,
-            color: theme.colorScheme.onSurface,
-          ),
-          content: CustomText(
-            text: 'Are you sure you want to sign out of your account?',
-            fontSize: 13.sp,
-            color: theme.colorScheme.onSurface.withValues(alpha: 0.8),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context, false),
-              child: CustomText(
-                text: 'Cancel',
-                fontSize: 13.sp,
-                color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
-              ),
-            ),
-            ElevatedButton(
-              onPressed: () => Navigator.pop(context, true),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.redAccent,
-                foregroundColor: Colors.white,
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10.r)),
-              ),
-              child: CustomText(
-                text: 'Log Out',
-                fontSize: 13.sp,
-                fontWeight: FontWeight.bold,
-                color: Colors.white,
-              ),
-            ),
-          ],
-        );
-      },
-    );
-
-    if (confirm == true) {
-      await _userService.logout();
-      if (!mounted) return;
-      Navigator.pushNamedAndRemoveUntil(context, '/signin', (route) => false);
-    }
-  }
-
-  // LAB ACT 5 - ENHANCEMENT 3: Dialog to Update Username in Firebase
-  Future<void> _showUpdateUsernameDialog(String currentUsername) async {
-    final controller = TextEditingController(text: currentUsername);
+  // LAB ACT 5 - ENHANCEMENT 3: Dialog to Update User (Full Name & Username) in Firebase
+  Future<void> _showUpdateUserDialog({
+    required String currentFullName,
+    required String currentUsername,
+  }) async {
+    final fullNameController = TextEditingController(text: currentFullName);
+    final usernameController = TextEditingController(text: currentUsername);
     final formKey = GlobalKey<FormState>();
 
     final updated = await showDialog<bool>(
@@ -97,23 +46,44 @@ class _ProfileScreenState extends State<ProfileScreen> {
           backgroundColor: theme.scaffoldBackgroundColor,
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16.r)),
           title: CustomText(
-            text: 'Update Username',
+            text: 'Update User Profile',
             fontSize: 16.sp,
             fontWeight: FontWeight.bold,
             color: theme.colorScheme.onSurface,
           ),
-          content: Form(
-            key: formKey,
-            child: TextFormField(
-              controller: controller,
-              decoration: InputDecoration(
-                labelText: 'New Username',
-                hintText: 'Enter new username',
-                border: OutlineInputBorder(borderRadius: BorderRadius.circular(12.r)),
+          content: SingleChildScrollView(
+            child: Form(
+              key: formKey,
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  TextFormField(
+                    controller: fullNameController,
+                    decoration: InputDecoration(
+                      labelText: 'Full Name',
+                      hintText: 'Enter full name',
+                      prefixIcon: const Icon(Icons.person_outline),
+                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(12.r)),
+                    ),
+                    validator: (val) => val == null || val.trim().isEmpty
+                        ? 'Full name cannot be empty'
+                        : null,
+                  ),
+                  SizedBox(height: 12.h),
+                  TextFormField(
+                    controller: usernameController,
+                    decoration: InputDecoration(
+                      labelText: 'Username',
+                      hintText: 'Enter username',
+                      prefixIcon: const Icon(Icons.alternate_email_rounded),
+                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(12.r)),
+                    ),
+                    validator: (val) => val == null || val.trim().isEmpty
+                        ? 'Username cannot be empty'
+                        : null,
+                  ),
+                ],
               ),
-              validator: (val) => val == null || val.trim().isEmpty
-                  ? 'Username cannot be empty'
-                  : null,
             ),
           ),
           actions: [
@@ -124,8 +94,34 @@ class _ProfileScreenState extends State<ProfileScreen> {
             ElevatedButton(
               onPressed: () async {
                 if (formKey.currentState!.validate()) {
-                  await _userService.updateUsername(username: controller.text.trim());
-                  if (context.mounted) Navigator.pop(context, true);
+                  final trimmedFullName = fullNameController.text.trim();
+                  final cleanUsername = usernameController.text.trim().replaceFirst(RegExp(r'^@'), '');
+
+                  String newFirstName = trimmedFullName;
+                  String newLastName = '';
+                  if (trimmedFullName.contains(' ')) {
+                    final index = trimmedFullName.indexOf(' ');
+                    newFirstName = trimmedFullName.substring(0, index).trim();
+                    newLastName = trimmedFullName.substring(index + 1).trim();
+                  }
+
+                  try {
+                    await _userService.updateUserProfile(
+                      firstName: newFirstName,
+                      lastName: newLastName,
+                      username: cleanUsername,
+                    );
+                    if (context.mounted) Navigator.pop(context, true);
+                  } catch (e) {
+                    if (context.mounted) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          backgroundColor: Colors.redAccent,
+                          content: Text('Failed to update profile: $e'),
+                        ),
+                      );
+                    }
+                  }
                 }
               },
               child: const Text('Save'),
@@ -135,12 +131,15 @@ class _ProfileScreenState extends State<ProfileScreen> {
       },
     );
 
+    fullNameController.dispose();
+    usernameController.dispose();
+
     if (updated == true) {
       _loadUserProfile();
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('Username updated successfully!'),
+          content: Text('User profile updated successfully!'),
           behavior: SnackBarBehavior.floating,
         ),
       );
@@ -493,7 +492,17 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     color: theme.colorScheme.onSurface,
                   ),
 
-                  SizedBox(height: 4.h),
+                  if (username.isNotEmpty) ...[
+                    SizedBox(height: 2.h),
+                    CustomText(
+                      text: '@$username',
+                      fontSize: 13.sp,
+                      fontWeight: FontWeight.w500,
+                      color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
+                    ),
+                  ],
+
+                  SizedBox(height: 6.h),
 
                   // LAB ACT 5 - ENHANCEMENT 3: LoginType Indicator Badge
                   Container(
@@ -514,7 +523,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         ),
                         SizedBox(width: 4.w),
                         CustomText(
-                          text: isFirebase ? 'Firebase Authenticated' : 'DummyJSON User',
+                          text: isFirebase ? 'Logged in with Firebase' : 'DummyJSON User',
                           fontSize: 11.sp,
                           fontWeight: FontWeight.w600,
                           color: isFirebase ? const Color(0xFFD87C00) : primaryColor,
@@ -534,22 +543,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       label: 'Firebase Email',
                       value: email.isNotEmpty ? email : 'Not available',
                     ),
-                    SizedBox(height: 10.h),
-                    _buildInfoCard(
-                      context,
-                      icon: Icons.alternate_email_rounded,
-                      label: 'Username',
-                      value: username.isNotEmpty ? '@$username' : 'Not set',
-                    ),
-                    if (firstName.isNotEmpty || lastName.isNotEmpty) ...[
-                      SizedBox(height: 10.h),
-                      _buildInfoCard(
-                        context,
-                        icon: Icons.badge_outlined,
-                        label: 'Full Name',
-                        value: '$firstName $lastName'.trim(),
-                      ),
-                    ],
                     if (data['age'] != null && data['age'].toString().isNotEmpty) ...[
                       SizedBox(height: 10.h),
                       _buildInfoCard(
@@ -569,13 +562,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         value: data['contactNo'].toString(),
                       ),
                     ],
-                    SizedBox(height: 10.h),
-                    _buildInfoCard(
-                      context,
-                      icon: Icons.fingerprint_rounded,
-                      label: 'Firebase UID',
-                      value: _userService.currentUser?.uid ?? 'Authenticated',
-                    ),
 
                     SizedBox(height: 22.h),
 
@@ -584,7 +570,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       children: [
                         Expanded(
                           child: OutlinedButton.icon(
-                            onPressed: () => _showUpdateUsernameDialog(username),
+                            onPressed: () => _showUpdateUserDialog(
+                              currentFullName: fullName.isNotEmpty ? fullName : displayName,
+                              currentUsername: username,
+                            ),
                             icon: Icon(Icons.edit_outlined, size: 16.sp),
                             label: const Text('Update User'),
                             style: OutlinedButton.styleFrom(
@@ -622,7 +611,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         icon: Icon(Icons.delete_forever_outlined,
                             size: 16.sp, color: Colors.redAccent),
                         label: CustomText(
-                          text: 'Delete Firebase Account',
+                          text: 'Delete Account',
                           fontSize: 12.sp,
                           fontWeight: FontWeight.w600,
                           color: Colors.redAccent,
@@ -640,13 +629,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     SizedBox(height: 10.h),
                     _buildInfoCard(
                       context,
-                      icon: Icons.alternate_email_rounded,
-                      label: 'Username',
-                      value: '@$username',
-                    ),
-                    SizedBox(height: 10.h),
-                    _buildInfoCard(
-                      context,
                       icon: Icons.email_outlined,
                       label: 'Email',
                       value: email.isNotEmpty ? email : 'Not provided',
@@ -659,32 +641,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       value: data['gender'] ?? 'Not specified',
                     ),
                   ],
-
-                  SizedBox(height: 24.h),
-
-                  // Logout Button
-                  SizedBox(
-                    width: double.infinity,
-                    child: ElevatedButton.icon(
-                      onPressed: _handleLogout,
-                      icon: Icon(Icons.logout_rounded, size: 18.sp, color: Colors.white),
-                      label: CustomText(
-                        text: 'Log Out',
-                        fontSize: 14.sp,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.white,
-                      ),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFFE55858),
-                        foregroundColor: Colors.white,
-                        elevation: 0,
-                        padding: EdgeInsets.symmetric(vertical: 14.h),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(14.r),
-                        ),
-                      ),
-                    ),
-                  ),
                 ],
               ),
             ),

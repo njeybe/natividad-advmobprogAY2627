@@ -87,6 +87,22 @@ class UserService {
     await firebaseAuth.signOut();
   }
 
+  /// LAB ACT 5 - ENHANCEMENT 3: Update User Profile (Full Name and Username)
+  Future<void> updateUserProfile({
+    required String firstName,
+    required String lastName,
+    required String username,
+  }) async {
+    final String fullName = '$firstName $lastName'.trim();
+    if (currentUser != null) {
+      await currentUser!.updateDisplayName(fullName.isNotEmpty ? fullName : username);
+    }
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString('firstName', firstName);
+    await prefs.setString('lastName', lastName);
+    await prefs.setString('username', username);
+  }
+
   /// Update Firebase User Display Name (Username)
   Future<void> updateUsername({required String username}) async {
     if (currentUser != null) {
@@ -212,7 +228,10 @@ class UserService {
     final prefs = await SharedPreferences.getInstance();
     final String loginTypeStr = prefs.getString('loginType') ?? (currentUser != null ? 'firebase' : 'dummyjson');
 
-    final String username = currentUser?.displayName ?? prefs.getString('username') ?? '';
+    final String? prefsUsername = prefs.getString('username');
+    final String username = (prefsUsername != null && prefsUsername.isNotEmpty)
+        ? prefsUsername
+        : (currentUser?.displayName ?? '');
     final String email = currentUser?.email ?? prefs.getString('email') ?? '';
 
     return {
